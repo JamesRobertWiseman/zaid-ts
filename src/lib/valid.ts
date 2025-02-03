@@ -12,16 +12,30 @@ export const validate = (id: string): ValidationObject => {
   // check it is only digits and exactly 13 digits long
   const validLength = idArray.length === 13 && !idArray.some(isNaN);
 
-  // check the first 6 digits are a valid date
-  const year = parseInt(idArray.slice(0, 2).join(""));
-  const month = parseInt(idArray.slice(2, 4).join(""));
-  const day = parseInt(idArray.slice(4, 6).join(""));
-  const fullYear = year >= 0 && year <= 21 ? 2000 + year : 1900 + year;
-  const date = new Date(`${fullYear}-${month}-${day}`);
-  const validDate =
-    date.getFullYear() === fullYear &&
-    date.getMonth() + 1 === month &&
-    date.getDate() === day;
+  // Extract and validate date parts
+  const [yearStr, monthStr, dayStr] = [
+    idArray.slice(0, 2).join(""),
+    idArray.slice(2, 4).join(""),
+    idArray.slice(4, 6).join(""),
+  ];
+
+  // Parse and validate numbers
+  const [y, m, d] = [yearStr, monthStr, dayStr].map((x) => parseInt(x));
+  let validDate = !isNaN(y) && !isNaN(m) && !isNaN(d);
+
+  if (validDate) {
+    // Basic range validation
+    if (m < 1 || m > 12 || d < 1 || d > 31) {
+      validDate = false;
+    } else {
+      const fullYear = y + (y <= 21 ? 2000 : 1900);
+      const date = new Date(fullYear, m - 1, d);
+      validDate =
+        date.getFullYear() === fullYear &&
+        date.getMonth() + 1 === m &&
+        date.getDate() === d;
+    }
+  }
 
   // check the 11th digit is a valid citizenship code that can be either 0 or 1
   const citizenshipCode = idArray[10];
