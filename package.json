@@ -1,6 +1,6 @@
 {
   "name": "zaid-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A typescript package for validating and parsing South African ID numbers.",
   "repository": {
     "type": "git",
