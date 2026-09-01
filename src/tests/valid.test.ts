@@ -1,63 +1,56 @@
 import { isValid, validate } from "../lib/valid";
 
+const VALID_RESULT = {
+  validLength: true,
+  validDate: true,
+  validCitizenshipCode: true,
+  validSecondLastDigit: true,
+  validChecksum: true,
+};
+
 describe("validate", () => {
-  test("valid ID", () => {
-    const id = "9002015052084";
-    const result = validate(id);
-    expect(result.validLength).toBe(true);
-    expect(result.validDate).toBe(true);
-    expect(result.validCitizenshipCode).toBe(true);
-    expect(result.validSecondLastDigit).toBe(true);
-    expect(result.validChecksum).toBe(true);
+  test("accepts the SARS reference ID", () => {
+    expect(validate("8001015009087")).toEqual(VALID_RESULT);
   });
 
-  test("invalid length", () => {
-    const id = "001231500108";
-    const result = validate(id);
+  test("accepts a refugee ID with another register index", () => {
+    expect(validate("9002015052258")).toEqual(VALID_RESULT);
+  });
+
+  test("accepts register index 9", () => {
+    expect(validate("9002015052191")).toEqual(VALID_RESULT);
+  });
+
+  test("rejects the wrong length", () => {
+    expect(validate("800101500908").validLength).toBe(false);
+  });
+
+  test("rejects non-digit characters", () => {
+    const result = validate("80010150090 7");
+
     expect(result.validLength).toBe(false);
-  });
-
-  test("invalid characters", () => {
-    const id = "00123150010a9";
-    const result = validate(id);
-    expect(result.validLength).toBe(false);
-  });
-
-  test("invalid date", () => {
-    const id = "0013315001089";
-    const result = validate(id);
-    expect(result.validDate).toBe(false);
-  });
-
-  test("invalid citizenship code", () => {
-    const id = "0012315002282";
-    const result = validate(id);
-    expect(result.validCitizenshipCode).toBe(false);
-  });
-
-  test("invalid second last digit", () => {
-    const id = "0012315001058";
-    const result = validate(id);
     expect(result.validSecondLastDigit).toBe(false);
   });
 
-  test("invalid checksum", () => {
-    const id = "0012315001080";
-    const result = validate(id);
-    expect(result.validChecksum).toBe(false);
+  test("rejects an impossible date", () => {
+    expect(validate("0002305000081").validDate).toBe(false);
+  });
+
+  test("rejects an unknown citizenship code", () => {
+    expect(validate("0012315002381").validCitizenshipCode).toBe(false);
+  });
+
+  test("rejects an invalid checksum", () => {
+    expect(validate("8001015009086").validChecksum).toBe(false);
   });
 });
 
 describe("isValid", () => {
-  test("valid ID", () => {
-    const id = "9002015052084";
-    const result = isValid(id);
-    expect(result).toBe(true);
+  test("accepts a valid ID", () => {
+    expect(isValid("8001015009087")).toBe(true);
   });
 
-  test("invalid ID", () => {
-    const id = "0012315001080";
-    const result = isValid(id);
-    expect(result).toBe(false);
+  test("rejects an invalid ID", () => {
+    expect(isValid("8001015009086")).toBe(false);
   });
 });
