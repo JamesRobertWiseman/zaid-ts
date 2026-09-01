@@ -1,60 +1,55 @@
 import { ValidationObject } from "types";
 
-/**
- * Validates a South African ID number.
- * @param id The ID number to validate.
- * @returns An object with each validation step as a key and a boolean as a value.
- */
+import { readBirthDate } from "./date";
+
+const ID_LENGTH = 13;
+const CITIZENSHIP_INDEX = 10;
+const REGISTER_INDEX = 11;
+const CHECK_DIGIT_INDEX = 12;
+const VALID_CITIZENSHIP_CODES = new Set([0, 1, 2]);
+const DIGIT_PATTERN = /^[0-9]$/;
+
+const hasValidFormat = (id: string): boolean =>
+  id.length === ID_LENGTH &&
+  [...id].every((digit) => DIGIT_PATTERN.test(digit));
+
+const getCheckDigit = (digits: number[]): number => {
+  const sourceDigits = digits.slice(0, CHECK_DIGIT_INDEX);
+  const oddSum = sourceDigits.reduce(
+    (sum, digit, index) => sum + (index % 2 === 0 ? digit : 0),
+    0
+  );
+  const evenDigits = sourceDigits
+    .filter((_, index) => index % 2 === 1)
+    .join("");
+  const doubledEvenSum = [...String(Number(evenDigits) * 2)].reduce(
+    (sum, digit) => sum + Number(digit),
+    0
+  );
+
+  return (10 - ((oddSum + doubledEvenSum) % 10)) % 10;
+};
+
 export const validate = (id: string): ValidationObject => {
-  // convert string to array of numbers
-  const idArray = id.split("").map(Number);
+  const validLength = hasValidFormat(id);
 
-  // check it is only digits and exactly 13 digits long
-  const validLength = idArray.length === 13 && !idArray.some(isNaN);
-
-  // Extract and validate date parts
-  const [yearStr, monthStr, dayStr] = [
-    idArray.slice(0, 2).join(""),
-    idArray.slice(2, 4).join(""),
-    idArray.slice(4, 6).join(""),
-  ];
-
-  // Parse and validate numbers
-  const [y, m, d] = [yearStr, monthStr, dayStr].map((x) => parseInt(x));
-  let validDate = !isNaN(y) && !isNaN(m) && !isNaN(d);
-
-  if (validDate) {
-    // Basic range validation
-    if (m < 1 || m > 12 || d < 1 || d > 31) {
-      validDate = false;
-    } else {
-      const fullYear = y + (y <= 21 ? 2000 : 1900);
-      const date = new Date(fullYear, m - 1, d);
-      validDate =
-        date.getFullYear() === fullYear &&
-        date.getMonth() + 1 === m &&
-        date.getDate() === d;
-    }
+  if (!validLength) {
+    return {
+      validLength: false,
+      validDate: false,
+      validCitizenshipCode: false,
+      validSecondLastDigit: false,
+      validChecksum: false,
+    };
   }
 
-  // check the 11th digit is a valid citizenship code that can be either 0 or 1
-  const citizenshipCode = idArray[10];
-  const validCitizenshipCode = citizenshipCode === 0 || citizenshipCode === 1;
-
-  // check that the 12th last digit is always 8
-  const secondLastDigit = idArray[11];
-  const validSecondLastDigit = secondLastDigit === 8;
-
-  // check is valid checksum
-  let sum = 0;
-  for (let i = idArray.length - 1; i >= 0; i--) {
-    const digit = idArray[i];
-    const multiplier = (idArray.length - i) % 2 === 0 ? 2 : 1;
-    const product = digit * multiplier;
-    sum += product > 9 ? product - 9 : product;
-  }
-  const res = sum % 10 === 0;
-  const validChecksum = res;
+  const digits = [...id].map(Number);
+  const validDate = readBirthDate(id) !== null;
+  const validCitizenshipCode = VALID_CITIZENSHIP_CODES.has(
+    digits[CITIZENSHIP_INDEX]
+  );
+  const validSecondLastDigit = Number.isInteger(digits[REGISTER_INDEX]);
+  const validChecksum = digits[CHECK_DIGIT_INDEX] === getCheckDigit(digits);
 
   return {
     validLength,
@@ -65,13 +60,5 @@ export const validate = (id: string): ValidationObject => {
   };
 };
 
-/**
- * Checks if a South African ID number is valid.
- * @param id The ID number to check.
- * @returns A boolean indicating whether the ID number is valid.
- */
-
-export const isValid = (id: string): boolean => {
-  const result = validate(id);
-  return Object.values(result).every((value) => value);
-};
+export const isValid = (id: string): boolean =>
+  Object.values(validate(id)).every(Boolean);
