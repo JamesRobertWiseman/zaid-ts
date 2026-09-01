@@ -6,6 +6,7 @@ export enum Gender {
 export enum Citizenship {
   CITIZEN = "SA citizen",
   RESIDENT = "Permanent resident",
+  REFUGEE = "Refugee",
 }
 
 export interface ValidationObject {
@@ -19,5 +20,5 @@ export interface ValidationObject {
 export interface IDInfo {
   dateOfBirth: Date;
   gender: "male" | "female";
-  citizenship: "SA citizen" | "Permanent resident";
+  citizenship: "SA citizen" | "Permanent resident" | "Refugee";
 }
